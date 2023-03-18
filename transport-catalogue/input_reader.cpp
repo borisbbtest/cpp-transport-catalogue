@@ -36,7 +36,7 @@ namespace transport_catalog::reader
             {
                 std::vector<const transport_catalog::Stop *> reverse_name;
                 std::for_each(std::next(buff.stops.rbegin()), buff.stops.rend(),
-                              [&reverse_name](const transport_catalog::Stop * name)
+                              [&reverse_name](const transport_catalog::Stop *name)
                               { reverse_name.push_back(name); });
                 buff.stops.insert(buff.stops.end(), reverse_name.begin(), reverse_name.end());
             }

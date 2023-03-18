@@ -32,7 +32,7 @@ namespace transport_catalog
         std::string name;
         BusType type;
         std::vector<const Stop *> stops;
-        
+
         bool operator==(const Bus &in) const
         {
             return name == in.name;
@@ -90,7 +90,7 @@ namespace transport_catalog
 
     public:
         void AddStop(Stop &stop);
-        bool AddDistances(std::string_view stop ,std::string_view to_stop ,size_t m);
+        bool AddDistances(std::string_view stop, std::string_view to_stop, size_t m);
         void AddBus(Bus &bus);
         const std::unordered_map<std::string_view, const Stop *> &GetAllStop() const;
         const std::unordered_map<std::string_view, const Bus *> &GetAllBus() const;

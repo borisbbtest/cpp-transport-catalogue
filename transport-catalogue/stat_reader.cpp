@@ -61,7 +61,7 @@ namespace transport_catalog::reader
                     << bus.routeLength << " route length, "
                     << std::setprecision(6)
                     << bus.curvature << " curvature"
-                    <<std::endl;
+                    << std::endl;
         }
 
         void StatReader::OutputStopInfo(std::string_view name) const
