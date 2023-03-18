@@ -1,6 +1,6 @@
 #include <iostream>
 #include <iomanip>
-#include "input_reader.h"
+#include "stat_reader.h"
 
 using namespace std;
 using namespace transport_catalog;
@@ -14,8 +14,7 @@ int main()
 
     reader::stat::StatReader out(tr, std::cout);
     reader::utils::LoadOutStreamFlowData(out, std::cin);
-    // out.StatToBus();
-    // out.StatToStop();
+
     out.Stat();
     return 0;
 }

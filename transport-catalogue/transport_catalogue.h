@@ -50,13 +50,13 @@ namespace transport_catalog
         size_t uniqStops;
         double routeLength;
         double curvature;
-        bool is_found = true;
+        bool isFound = true;
     };
     struct StopOut
     {
         std::string_view name;
         std::set<std::string_view> buses;
-        bool is_found = true;
+        bool isFound = true;
     };
 
     using RelationStopToStop = std::pair<const Stop *, const Stop *>;
@@ -79,10 +79,10 @@ namespace transport_catalog
     private:
         // Store buses
         std::deque<Bus> buses_;
-        std::unordered_map<std::string_view, const Bus *> dicBuses_;
+        std::unordered_map<std::string_view, const Bus *> dictBuses_;
         // Store stop
         std::deque<Stop> stops_;
-        std::unordered_map<std::string_view, const Stop *> dicStops_;
+        std::unordered_map<std::string_view, const Stop *> dictStops_;
         // Store routes to buses
         std::unordered_map<std::string_view, std::set<std::string_view>> stopToBuses_;
         // Calculated distance stop to stop
@@ -90,14 +90,13 @@ namespace transport_catalog
 
     public:
         void AddStop(Stop &stop);
-        bool AddDistances(std::string_view stop, std::string_view to_stop, size_t m);
+        bool AddDistances(std::string_view stop, std::string_view to_stop, size_t ste_meter);
         void AddBus(Bus &bus);
         const std::unordered_map<std::string_view, const Stop *> &GetAllStop() const;
         const std::unordered_map<std::string_view, const Bus *> &GetAllBus() const;
         const std::unordered_map<std::string_view, std::set<std::string_view>> &StopToBus() const;
         const Stop *FindStop(std::string_view name) const;
         const Bus *FindBus(std::string_view name) const;
-        void CalculateDistances();
 
         BusOut GetBusInfo(std::string_view name) const;
         StopOut GetStopInfo(std::string_view name) const;

@@ -36,9 +36,9 @@ namespace transport_catalog::reader
             TransportCatalogue transport_catalog_;
 
             // Parsing Data to Bus
-            transport_catalog::Bus parsingDataToBusAndRoute(Request &req);
+            transport_catalog::Bus ParsingDataToBusAndRoute(Request &req);
             // Parsing Data to Stops
-            transport_catalog::Stop parsingDataToBusStopAndRoutes(Request &req);
+            transport_catalog::Stop ParsingDataToBusStopAndRoutes(Request &req);
 
         public:
             // This block to transport catalog
@@ -52,22 +52,18 @@ namespace transport_catalog::reader
             void RequestStoreDB(Request &req, RequestTypeInput type, bool store_req);
             void RequestStoreCurvature();
         };
-
     }
     // Helper functions for reading from various streams. You can tell the producer.
     // Creates a queue or you can submit the queue itself as an input.
     namespace utils
     {
-        using namespace transport_catalog::reader::stat;
         using namespace transport_catalog::reader::input;
 
         void LoadStreamFlowData(InputReader &input_reader, std::istream &input); // load stream from flow
         InputReader LoadStreamFlowData(std::istream &input);                     // load stream from flow
-        void LoadOutStreamFlowData(StatReader &res, std::istream &input);
-        Request ParsingRequestTypeIn(std::string_view str);
         // It checks Where do we put data
         Request ParsingRequest(std::string_view str);
-
+        Request ParsingRequestTypeIn(std::string_view str);
         // trim from start
         std::string &ltrim(std::string &s);
 

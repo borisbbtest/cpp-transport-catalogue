@@ -6,14 +6,14 @@ namespace transport_catalog
     void TransportCatalogue::AddStop(Stop &stop)
     {
         stops_.push_back(std::move(stop));
-        dicStops_[stops_.back().name] = &stops_.back();
+        dictStops_[stops_.back().name] = &stops_.back();
     }
 
     void TransportCatalogue::AddBus(Bus &bus)
     {
         buses_.push_back(std::move(bus));
         auto &buff = buses_.back();
-        dicBuses_[buff.name] = &buff;
+        dictBuses_[buff.name] = &buff;
         for (const auto *tmp : buff.stops)
         {
             stopToBuses_[tmp->name].insert(buff.name);
@@ -22,9 +22,9 @@ namespace transport_catalog
 
     const Stop *TransportCatalogue::FindStop(std::string_view name) const
     {
-        const auto stop = dicStops_.find(name);
+        const auto stop = dictStops_.find(name);
 
-        if (stop == dicStops_.end())
+        if (stop == dictStops_.end())
         {
             static Stop empty;
             return &empty;
@@ -34,8 +34,8 @@ namespace transport_catalog
 
     const Bus *TransportCatalogue::FindBus(std::string_view name) const
     {
-        const auto finded_bus = dicBuses_.find(name);
-        if (finded_bus == dicBuses_.end())
+        const auto finded_bus = dictBuses_.find(name);
+        if (finded_bus == dictBuses_.end())
         {
             static Bus empty;
             return &empty;
@@ -43,7 +43,7 @@ namespace transport_catalog
         return finded_bus->second;
     }
 
-    bool TransportCatalogue::AddDistances(std::string_view stop, std::string_view to_stop, size_t m)
+    bool TransportCatalogue::AddDistances(std::string_view stop, std::string_view to_stop, size_t ste_meter)
     {
         const Stop *fstop = FindStop(stop), *sstop = FindStop(to_stop);
         if (*fstop == Stop{} || *sstop == Stop{})
@@ -51,7 +51,7 @@ namespace transport_catalog
             return false;
         }
         RelationStopToStop x{fstop, sstop};
-        distancesToStops_.insert_or_assign(x, m);
+        distancesToStops_.insert_or_assign(x, ste_meter);
         return true;
     }
 
@@ -62,7 +62,7 @@ namespace transport_catalog
         {
             StopOut stop_info;
             stop_info.name = name;
-            stop_info.is_found = false;
+            stop_info.isFound = false;
             return stop_info;
         }
         StopOut stop_info;
@@ -78,7 +78,7 @@ namespace transport_catalog
         {
             BusOut bus_info;
             bus_info.name = name;
-            bus_info.is_found = false;
+            bus_info.isFound = false;
             return bus_info;
         }
         std::unordered_set<const Stop *> uniq_stops = {*bus->stops.begin()};
@@ -120,12 +120,12 @@ namespace transport_catalog
 
     const std::unordered_map<std::string_view, const Stop *> &TransportCatalogue::GetAllStop() const
     {
-        return dicStops_;
+        return dictStops_;
     }
 
     const std::unordered_map<std::string_view, const Bus *> &TransportCatalogue::GetAllBus() const
     {
-        return dicBuses_;
+        return dictBuses_;
     }
     const std::unordered_map<std::string_view, std::set<std::string_view>> &TransportCatalogue::StopToBus() const
     {

@@ -1,10 +1,9 @@
-#include "stat_reader.h"
 #include <iostream>
 #include <string_view>
 #include <string>
 #include <iomanip>
 #include <iostream>
-
+#include "stat_reader.h"
 namespace transport_catalog::reader
 {
     namespace stat
@@ -12,14 +11,6 @@ namespace transport_catalog::reader
         StatReader::StatReader(const transport_catalog::TransportCatalogue &transport_catalogue, std::ostream &output)
             : transport_catalogue_(transport_catalogue), output_(output)
         {
-        }
-
-        void StatReader::StatToBus() const
-        {
-            for (const std::string_view name : requests_bus)
-            {
-                OutputBusInfo(name);
-            }
         }
 
         void StatReader::Stat() const
@@ -37,19 +28,11 @@ namespace transport_catalog::reader
             }
         }
 
-        void StatReader::StatToStop() const
-        {
-            for (const std::string_view name : requests_stop)
-            {
-                OutputStopInfo(name);
-            }
-        }
-
         void StatReader::OutputBusInfo(std::string_view name) const
         {
             BusOut bus = transport_catalogue_.GetBusInfo(name);
 
-            if (!bus.is_found)
+            if (!bus.isFound)
             {
                 output_ << "Bus " << bus.name << ": not found\n";
                 return;
@@ -69,7 +52,7 @@ namespace transport_catalog::reader
             StopOut stop = transport_catalogue_.GetStopInfo(name);
 
             output_ << "Stop " << stop.name << ": ";
-            if (!stop.is_found)
+            if (!stop.isFound)
             {
                 output_ << "not found\n";
             }
@@ -89,5 +72,34 @@ namespace transport_catalog::reader
                 output_ << "\n";
             }
         }
+    }
+    //
+    namespace utils
+    {
+
+        void LoadOutStreamFlowData(stat::StatReader &res, std::istream &input)
+        {
+            size_t count = 0;
+            input >> count;
+            std::string str;
+            std::getline(input, str);
+            for (int i = 0; i < count && std::getline(input, str); i++)
+            {
+                auto req = ParsingRequestTypeIn(str);
+                if (req.type == RequestTypeInput::Bus)
+                {
+                    // res.requests_bus.push_back(move(req.name));
+                    // auto *tmp = &res.requests_bus.back();
+                    res.requests_list.push_back({stat::TypeStat::Bus, move(req.name)});
+                }
+                if (req.type == RequestTypeInput::Stop)
+                {
+                    // res.requests_stop.push_back(move(req.name));
+                    // auto *tmp = &res.requests_stop.back();
+                    res.requests_list.push_back({stat::TypeStat::Stop, move(req.name)});
+                }
+            }
+        }
+
     }
 }

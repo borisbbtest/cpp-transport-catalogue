@@ -2,9 +2,14 @@
 #include <vector>
 #include <deque>
 #include <string>
+#include <iostream>
+#include <iomanip>
 #include "transport_catalogue.h"
+#include "input_reader.h"
+
 namespace transport_catalog::reader
 {
+
     namespace stat
     {
         enum TypeStat
@@ -17,8 +22,6 @@ namespace transport_catalog::reader
         public:
             StatReader(const transport_catalog::TransportCatalogue &transport_catalogue, std::ostream &output);
             StatReader() = default;
-            void StatToBus() const;
-            void StatToStop() const;
             void Stat() const;
             std::vector<std::string> requests_stop;
             std::vector<std::string> requests_bus;
@@ -31,6 +34,11 @@ namespace transport_catalog::reader
             void OutputBusInfo(std::string_view name) const;
             void OutputStopInfo(std::string_view name) const;
         };
+    }
+    namespace utils
+    {
+        using namespace transport_catalog::reader::stat;
+        void LoadOutStreamFlowData(StatReader &res, std::istream &input);
     }
 
 }

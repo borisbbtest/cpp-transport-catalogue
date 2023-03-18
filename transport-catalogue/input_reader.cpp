@@ -8,7 +8,7 @@ namespace transport_catalog::reader
     namespace input
     {
         // Parsing Data to Bus
-        transport_catalog::Bus InputReader::parsingDataToBusAndRoute(Request &req)
+        transport_catalog::Bus InputReader::ParsingDataToBusAndRoute(Request &req)
         {
             transport_catalog::Bus buff;
             buff.name = req.name;
@@ -44,7 +44,7 @@ namespace transport_catalog::reader
         }
 
         // Parsing Data to Stops
-        transport_catalog::Stop InputReader::parsingDataToBusStopAndRoutes(Request &req)
+        transport_catalog::Stop InputReader::ParsingDataToBusStopAndRoutes(Request &req)
         {
             auto words = utils::SplitIntoWords(req.value, ',');
             transport_catalog::Stop buff;
@@ -93,13 +93,13 @@ namespace transport_catalog::reader
             {
                 if (req.type == RequestTypeInput::Stop)
                 {
-                    transport_catalog::Stop x = parsingDataToBusStopAndRoutes(req);
-                    transport_catalog_.AddStop(x);
+                    transport_catalog::Stop stop = ParsingDataToBusStopAndRoutes(req);
+                    transport_catalog_.AddStop(stop);
                 }
                 if (req.type == RequestTypeInput::Bus)
                 {
-                    transport_catalog::Bus x = parsingDataToBusAndRoute(req);
-                    transport_catalog_.AddBus(x);
+                    transport_catalog::Bus bus = ParsingDataToBusAndRoute(req);
+                    transport_catalog_.AddBus(bus);
                 }
             }
             if (store_req == true)
@@ -140,29 +140,25 @@ namespace transport_catalog::reader
                 input_reader.RequestStoreDB(buff, RequestTypeInput::Bus, false);
             }
         }
-        //
-        void LoadOutStreamFlowData(StatReader &res, std::istream &input)
+        input::Request ParsingRequestTypeIn(std::string_view str)
         {
-            size_t count = 0;
-            input >> count;
-            std::string str;
-            std::getline(input, str);
-            for (int i = 0; i < count && std::getline(input, str); i++)
+            Request res;
+            res.type = RequestTypeInput::BadRequest;
+            if (str.substr(0, 4) == "Stop")
             {
-                auto req = ParsingRequestTypeIn(str);
-                if (req.type == RequestTypeInput::Bus)
-                {
-                    // res.requests_bus.push_back(move(req.name));
-                    // auto *tmp = &res.requests_bus.back();
-                    res.requests_list.push_back({TypeStat::Bus, move(req.name)});
-                }
-                if (req.type == RequestTypeInput::Stop)
-                {
-                    // res.requests_stop.push_back(move(req.name));
-                    // auto *tmp = &res.requests_stop.back();
-                    res.requests_list.push_back({TypeStat::Stop, move(req.name)});
-                }
+                res.type = RequestTypeInput::Stop;
+                str.remove_prefix(5);
+                trim(str);
+                res.name = str;
             }
+            if (str.substr(0, 3) == "Bus")
+            {
+                res.type = RequestTypeInput::Bus;
+                str.remove_prefix(4);
+                trim(str);
+                res.name = str;
+            }
+            return res;
         }
         //
         Request ParsingRequest(std::string_view str)
@@ -185,26 +181,7 @@ namespace transport_catalog::reader
             }
             return res;
         }
-        Request ParsingRequestTypeIn(std::string_view str)
-        {
-            Request res;
-            res.type = RequestTypeInput::BadRequest;
-            if (str.substr(0, 4) == "Stop")
-            {
-                res.type = RequestTypeInput::Stop;
-                str.remove_prefix(5);
-                trim(str);
-                res.name = str;
-            }
-            if (str.substr(0, 3) == "Bus")
-            {
-                res.type = RequestTypeInput::Bus;
-                str.remove_prefix(4);
-                trim(str);
-                res.name = str;
-            }
-            return res;
-        }
+
         InputReader LoadStreamFlowData(std::istream &input)
         {
             InputReader res;
