@@ -8,20 +8,20 @@ namespace transport_catalog::reader
     namespace input
     {
         // Parsing Data to Bus
-        transport_catalog::Bus InputReader::ParsingDataToBusAndRoute(Request &req)
+        transport_catalog::domain::Bus InputReader::ParsingDataToBusAndRoute(Request &req)
         {
-            transport_catalog::Bus buff;
+            transport_catalog::domain::Bus buff;
             buff.name = req.name;
             char delim;
             if (req.value.find('>') != std::string::npos)
             {
                 delim = '>';
-                buff.type = BusType::Ring;
+                buff.type = transport_catalog::domain::BusType::Ring;
             }
             else
             {
                 delim = '-';
-                buff.type = BusType::Line;
+                buff.type = transport_catalog::domain::BusType::Line;
             }
             auto words = utils::SplitIntoWords(req.value, delim);
             if (words.size() >= 1 and req.name.size() > 0)
@@ -32,11 +32,11 @@ namespace transport_catalog::reader
                     buff.stops.push_back(t);
                 }
             }
-            if (buff.type == BusType::Line)
+            if (buff.type == transport_catalog::domain::BusType::Line)
             {
-                std::vector<const transport_catalog::Stop *> reverse_name;
+                std::vector<const transport_catalog::domain::Stop *> reverse_name;
                 std::for_each(std::next(buff.stops.rbegin()), buff.stops.rend(),
-                              [&reverse_name](const transport_catalog::Stop *name)
+                              [&reverse_name](const transport_catalog::domain::Stop *name)
                               { reverse_name.push_back(name); });
                 buff.stops.insert(buff.stops.end(), reverse_name.begin(), reverse_name.end());
             }
@@ -44,10 +44,10 @@ namespace transport_catalog::reader
         }
 
         // Parsing Data to Stops
-        transport_catalog::Stop InputReader::ParsingDataToBusStopAndRoutes(Request &req)
+        transport_catalog::domain::Stop InputReader::ParsingDataToBusStopAndRoutes(Request &req)
         {
             auto words = utils::SplitIntoWords(req.value, ',');
-            transport_catalog::Stop buff;
+            transport_catalog::domain::Stop buff;
             if (words.size() >= 2 and req.name.size() > 0)
             {
                 buff.coordinates.lat = stod(std::string(words.at(0)));
@@ -93,12 +93,12 @@ namespace transport_catalog::reader
             {
                 if (req.type == RequestTypeInput::Stop)
                 {
-                    transport_catalog::Stop stop = ParsingDataToBusStopAndRoutes(req);
+                    transport_catalog::domain::Stop stop = ParsingDataToBusStopAndRoutes(req);
                     transport_catalog_.AddStop(stop);
                 }
                 if (req.type == RequestTypeInput::Bus)
                 {
-                    transport_catalog::Bus bus = ParsingDataToBusAndRoute(req);
+                    transport_catalog::domain::Bus bus = ParsingDataToBusAndRoute(req);
                     transport_catalog_.AddBus(bus);
                 }
             }
@@ -187,30 +187,6 @@ namespace transport_catalog::reader
             InputReader res;
             LoadStreamFlowData(res, input);
             return res;
-        }
-
-        // trim from start
-        std::string &ltrim(std::string &s)
-        {
-            s.erase(s.begin(), std::find_if(s.begin(), s.end(),
-                                            std::not1(std::ptr_fun<int, int>(std::isspace))));
-            return s;
-        }
-
-        // trim from end
-        std::string &rtrim(std::string &s)
-        {
-            s.erase(std::find_if(s.rbegin(), s.rend(),
-                                 std::not1(std::ptr_fun<int, int>(std::isspace)))
-                        .base(),
-                    s.end());
-            return s;
-        }
-
-        // trim from both ends. delete the firs and last backspaces.
-        std::string &trim(std::string &s)
-        {
-            return ltrim(rtrim(s));
         }
 
         std::string_view trim(std::string_view str)

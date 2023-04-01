@@ -86,8 +86,8 @@ namespace transport_catalog
         size_t route_len = 0;
         double straight_way = 0.0;
 
-        Coordinates coordinate_from = (*bus->stops.begin())->coordinates;
-        Coordinates coordinate_to;
+        geo::Coordinates coordinate_from = (*bus->stops.begin())->coordinates;
+        geo::Coordinates coordinate_to;
         const Stop *stop_from = *bus->stops.begin();
         const Stop *stop_to;
 
