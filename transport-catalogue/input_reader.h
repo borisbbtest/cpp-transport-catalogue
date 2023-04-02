@@ -36,9 +36,9 @@ namespace transport_catalog::reader
             TransportCatalogue transport_catalog_;
 
             // Parsing Data to Bus
-            transport_catalog::Bus ParsingDataToBusAndRoute(Request &req);
+            transport_catalog::domain::Bus ParsingDataToBusAndRoute(Request &req);
             // Parsing Data to Stops
-            transport_catalog::Stop ParsingDataToBusStopAndRoutes(Request &req);
+            transport_catalog::domain::Stop ParsingDataToBusStopAndRoutes(Request &req);
 
         public:
             // This block to transport catalog
@@ -64,14 +64,7 @@ namespace transport_catalog::reader
         // It checks Where do we put data
         Request ParsingRequest(std::string_view str);
         Request ParsingRequestTypeIn(std::string_view str);
-        // trim from start
-        std::string &ltrim(std::string &s);
 
-        // trim from end
-        std::string &rtrim(std::string &s);
-
-        // trim from both ends. delete the firs and last backspaces.
-        std::string &trim(std::string &s);
         std::string_view trim(std::string_view str);
         std::vector<std::string_view> SplitIntoWords(std::string_view str, char delimiter);
     }

@@ -19,6 +19,18 @@ namespace transport_catalog
             stopToBuses_[tmp->name].insert(buff.name);
         }
     }
+    std::vector<const Bus *> TransportCatalogue::GetBusesVector() const
+    {
+        std::vector<const Bus *> buses;
+        buses.reserve(buses_.size());
+
+        for (const auto &bus : buses_)
+        {
+            buses.push_back(&bus);
+        }
+
+        return buses;
+    }
 
     const Stop *TransportCatalogue::FindStop(std::string_view name) const
     {
@@ -86,8 +98,8 @@ namespace transport_catalog
         size_t route_len = 0;
         double straight_way = 0.0;
 
-        Coordinates coordinate_from = (*bus->stops.begin())->coordinates;
-        Coordinates coordinate_to;
+        geo::Coordinates coordinate_from = (*bus->stops.begin())->coordinates;
+        geo::Coordinates coordinate_to;
         const Stop *stop_from = *bus->stops.begin();
         const Stop *stop_to;
 
