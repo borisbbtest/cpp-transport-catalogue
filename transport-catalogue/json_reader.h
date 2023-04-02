@@ -16,7 +16,7 @@ namespace transport_catalog::json_reader
         TransportCatalogue transport_catalog_;
         inline void StatRequest();
         inline void BaseRequest();
-        inline void RenderSVGRequest();
+        svg::Document RenderSVGRequest();
         svg::Color Color(const json::Node &color);
         std::vector<svg::Color> ColorPalette(const json::Array &palette);
         svg::Point Offset(const json::Array &offset);

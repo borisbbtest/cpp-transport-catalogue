@@ -119,16 +119,82 @@ namespace transport_catalog::svgreader
         size_t color_index_;
     };
 
-    class MapRenderer
+    class TextMapBus : public svg::Drawable
     {
 
     public:
-        MapRenderer(const RenderSettings &config, const std::unordered_map<std::string_view, const domain::Bus *> &dictBus);
+        TextMapBus(svg::Point &point, std::string_view text, const RenderSettings &config, size_t &color);
+        void Draw(svg::ObjectContainer &container) const override;
+
+    private:
+        svg::Point point_;
+        std::string_view text_;
+        const RenderSettings &config_;
+        size_t color_index_;
+    };
+
+    class TextMapStop : public svg::Drawable
+    {
+
+    public:
+        TextMapStop(const svg::Point &point, std::string_view text, const RenderSettings &config);
+        void Draw(svg::ObjectContainer &container) const override;
+
+    private:
+        svg::Point point_;
+        std::string_view text_;
+        const RenderSettings &config_;
+    };
+
+    class PointMap : public svg::Drawable
+    {
+
+    public:
+        PointMap(const svg::Point &point, const RenderSettings &config);
+        void Draw(svg::ObjectContainer &container) const override;
+
+    private:
+        svg::Point point_;
+        const RenderSettings &config_;
+    };
+    class MapRenderer
+    {
+        using LabelCoordinates = std::pair<std::string_view, geo::Coordinates*>;
+        struct StopComparator
+        {
+            bool operator()(const domain::Stop *lhs, const domain::Stop *rhs) const
+            {
+                return lhs->name < rhs->name;
+            }
+        };
+        struct PointComparator
+        {
+            bool operator()(const LabelCoordinates* lhs, const LabelCoordinates *rhs) const
+            {
+                return lhs->first < rhs->first;
+            }
+        };
+        using ArrayCoordinates = std::set<const LabelCoordinates ,MapRenderer::PointComparator>;
+        using StopSet = std::set<const domain::Stop *, MapRenderer::StopComparator>;
+
+    public:
+        MapRenderer(const RenderSettings &config, std::vector<const domain::Bus *> &dictBus);
+        StopSet ConvertBuses(std::vector<const domain::Bus *> &dictBus);
         svg::Document RenderMap();
+        SphereProjector GetSphere(const MapRenderer::StopSet &stops, const RenderSettings &config) const;
+        inline void InitRenderSettingsRoute();
+        inline void InitRenderSettingsRouteText(const std::string_view bus_name, std::vector<svg::Point> &points, domain::BusType typebus, size_t color_index);
         // Data members
     private:
         // Data members
         std::map<std::string_view, std::vector<RouteLine>> routeline_;
+        std::map<std::string_view, std::vector<TextMapBus>> routelineText_;
+        std::vector<PointMap> routelinePoint_;
+        std::vector<TextMapStop> routelinePointText_;
+        
         RenderSettings renderSettings_;
+        std::vector<const domain::Bus *> &dictBus_;
+        StopSet stops_ ;
+        SphereProjector sphereProjector_;
     };
 }

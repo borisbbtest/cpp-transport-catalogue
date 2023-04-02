@@ -30,6 +30,7 @@ namespace transport_catalog::domain
     {
         std::string name;
         BusType type;
+        BusType  view;
         std::vector<const Stop *> stops;
 
         bool operator==(const Bus &in) const

@@ -28,6 +28,7 @@ namespace transport_catalog
         void AddStop(Stop &stop);
         bool AddDistances(std::string_view stop, std::string_view to_stop, size_t ste_meter);
         void AddBus(Bus &bus);
+        std::vector<const Bus *> GetBusesVector() const;
         const std::unordered_map<std::string_view, const Stop *> &GetAllStop() const;
         const std::unordered_map<std::string_view, const Bus *> &GetAllBus() const;
         const std::unordered_map<std::string_view, std::set<std::string_view>> &StopToBus() const;

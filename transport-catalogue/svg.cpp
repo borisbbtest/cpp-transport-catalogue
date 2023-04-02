@@ -36,7 +36,7 @@ namespace svg
     {
         auto &out = context.out;
         out << "<circle cx=\""sv << center_.x << "\" cy=\""sv << center_.y << "\" "sv;
-        out << "r=\""sv << radius_ << "\" "sv;
+        out << "r=\""sv << radius_ << "\""sv;
         RenderAttrs(context.out);
         out << "/>"sv;
     }
@@ -116,7 +116,9 @@ namespace svg
     void Text::RenderObject(const RenderContext &context) const
     {
         auto &out = context.out;
-        out << "<text x=\"" << pos_.x << "\" y=\"" << pos_.y << "\" ";
+        out << "<text";
+        RenderAttrs(context.out);
+        out << " x=\"" << pos_.x << "\" y=\"" << pos_.y << "\" ";
         out << "dx=\"" << offset_.x << "\" dy=\"" << offset_.y << "\" ";
         out << "font-size=\"" << font_size_ << "\"";
 
@@ -129,7 +131,6 @@ namespace svg
             out << " font-weight=\"" << font_weight_ << "\"";
         }
 
-        RenderAttrs(context.out);
         out << ">" << data_ << "</text>";
     }
 

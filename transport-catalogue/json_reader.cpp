@@ -7,8 +7,7 @@ namespace transport_catalog::json_reader
     JsonReader::JsonReader(std::istream &it) : document_json_(json::Load(it))
     {
         BaseRequest();
-        // StatRequest();
-        RenderSVGRequest();
+        StatRequest();
     }
 
     inline void JsonReader::StatRequest()
@@ -61,6 +60,13 @@ namespace transport_catalog::json_reader
                             buff_node["error_message"] = std::string("not found");
                         }
                     }
+                    if (value.AsMap().at("type").AsString() == "Map")
+                    {
+                        const auto &mapdoc = RenderSVGRequest();
+                        std::ostringstream sstream;
+                        mapdoc.Render(sstream);
+                        buff_node["map"] = sstream.str();
+                    }
                     res.push_back(buff_node);
                 }
                 PrintNode(res, std::cout);
@@ -111,6 +117,7 @@ namespace transport_catalog::json_reader
 
                         buff_bus.name = value.AsMap().at("name").AsString();
                         buff_bus.type = value.AsMap().at("is_roundtrip").AsBool() ? domain::BusType::Ring : domain::BusType::Line;
+
                         for (const auto &v : value.AsMap().at("stops").AsArray())
                         {
                             auto stop = transport_catalog_.FindStop(v.AsString());
@@ -121,6 +128,16 @@ namespace transport_catalog::json_reader
                             // std::cout << "--" << v.AsString() << std::endl;
                         }
 
+                        if (buff_bus.stops.front() != buff_bus.stops.back())
+                        {
+
+                            buff_bus.view = buff_bus.type;
+                        }
+                        else
+                        {
+                            buff_bus.view = domain::BusType::Ring;
+                        }
+
                         if (buff_bus.type == transport_catalog::domain::BusType::Line)
                         {
                             std::vector<const transport_catalog::domain::Stop *> reverse_name;
@@ -129,6 +146,7 @@ namespace transport_catalog::json_reader
                                           { reverse_name.push_back(name); });
                             buff_bus.stops.insert(buff_bus.stops.end(), reverse_name.begin(), reverse_name.end());
                         }
+
                         transport_catalog_.AddBus(buff_bus);
                     }
                 }
@@ -140,8 +158,9 @@ namespace transport_catalog::json_reader
         }
     }
 
-    inline void JsonReader::RenderSVGRequest()
+    svg::Document JsonReader::RenderSVGRequest()
     {
+        svg::Document doc;
         try
         {
             svgreader::RenderSettings redsetting;
@@ -160,14 +179,15 @@ namespace transport_catalog::json_reader
             redsetting.underlayer_width = root_map.at("underlayer_width").AsDouble();
             redsetting.color_palette = ColorPalette(root_map.at("color_palette").AsArray());
 
-            svgreader::MapRenderer maprend(redsetting, transport_catalog_.GetAllBus());
-            svg::Document doc = maprend.RenderMap();
-            doc.Render(std::cout);
+            auto buses = transport_catalog_.GetBusesVector();
+            svgreader::MapRenderer maprend(redsetting, buses);
+            doc = maprend.RenderMap();
         }
         catch (const std::exception &e)
         {
             std::cerr << "Error -" << e.what() << '\n';
         }
+        return doc;
     }
 
     svg::Point JsonReader::Offset(const json::Array &offset)

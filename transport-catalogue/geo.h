@@ -2,6 +2,7 @@
 
 namespace geo
 {
+
     struct Coordinates
     {
         double lat; // Широта
@@ -15,5 +16,7 @@ namespace geo
             return !(*this == other);
         }
     };
+
     double ComputeDistance(Coordinates from, Coordinates to);
+
 } // namespace geo

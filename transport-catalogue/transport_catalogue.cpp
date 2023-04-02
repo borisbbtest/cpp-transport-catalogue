@@ -19,6 +19,18 @@ namespace transport_catalog
             stopToBuses_[tmp->name].insert(buff.name);
         }
     }
+    std::vector<const Bus *> TransportCatalogue::GetBusesVector() const
+    {
+        std::vector<const Bus *> buses;
+        buses.reserve(buses_.size());
+
+        for (const auto &bus : buses_)
+        {
+            buses.push_back(&bus);
+        }
+
+        return buses;
+    }
 
     const Stop *TransportCatalogue::FindStop(std::string_view name) const
     {
