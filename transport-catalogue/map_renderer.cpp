@@ -221,34 +221,34 @@ namespace transport_catalog::svgreader
     {
         svg::Document doc;
 
-        for (const auto &[k, v] : routeline_)
+        for (const auto &[busname,pline ] : routeline_)
         {
             // std::cout << "name" << k << std::endl;
 
-            for (const RouteLine &a : v)
+            for (const RouteLine &a : pline)
             {
                 a.Draw(doc);
             }
         }
 
-        for (const auto &[k, v] : routelineText_)
+        for (const auto &[busname, text] : routelineText_)
         {
             // std::cout << "name" << k << std::endl;
 
-            for (const TextMapBus &a : v)
+            for (const TextMapBus &a : text)
             {
                 a.Draw(doc);
             }
         }
 
-        for (const auto &v : routelinePoint_)
+        for (const auto &Point : routelinePoint_)
         {
-            v.Draw(doc);
+            Point.Draw(doc);
         }
 
-        for (const auto &v : routelinePointText_)
+        for (const auto &Point : routelinePointText_)
         {
-            v.Draw(doc);
+            Point.Draw(doc);
         }
 
         return doc;
