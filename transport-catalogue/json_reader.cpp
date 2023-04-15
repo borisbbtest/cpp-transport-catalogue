@@ -10,16 +10,16 @@ namespace transport_catalog::json_reader
         StatRequest();
     }
 
-    inline void JsonReader::RenderMap(json::Dict &buff_node, const json::Node &value)
+    inline void JsonReader::RenderMap(json::Builder &buff_node)
     {
         const auto &mapdoc = RenderSVGRequest();
         std::ostringstream sstream;
         mapdoc.Render(sstream);
-        buff_node["map"] = sstream.str();
+        buff_node.Key("map").Value(sstream.str());
     }
-    inline void JsonReader::RenderStop(json::Dict &buff_node, const json::Node &value)
+    inline void JsonReader::RenderStop(json::Builder &buff_node, const json::Node &value)
     {
-        const auto &stopinfo = transport_catalog_.GetStopInfo(value.AsMap().at("name").AsString());
+        const auto &stopinfo = transport_catalog_.GetStopInfo(value.AsDict().at("name").AsString());
         if (stopinfo.isFound)
         {
             json::Array tmp;
@@ -27,29 +27,29 @@ namespace transport_catalog::json_reader
             {
                 tmp.push_back(json::Node{std::string(str)});
             }
-            buff_node["buses"] = tmp;
+            buff_node.Key("buses").Value(tmp);
         }
         else
         {
-            buff_node["error_message"] = std::string("not found");
-            ;
+            buff_node.Key("error_message").Value("not found");
         }
     }
 
-    inline void JsonReader::RenderBus(json::Dict &buff_node, const json::Node &value)
+    inline void JsonReader::RenderBus(json::Builder &buff_node, const json::Node &value)
     {
         // std::cout << value.AsMap().at("name").AsString() << std::endl;
-        const auto &businfo = transport_catalog_.GetBusInfo(value.AsMap().at("name").AsString());
+        const auto &businfo = transport_catalog_.GetBusInfo(value.AsDict().at("name").AsString());
         if (businfo.isFound)
         {
-            buff_node["curvature"] = businfo.curvature;
-            buff_node["route_length"] = businfo.routeLength;
-            buff_node["stop_count"] = static_cast<int>(businfo.coutStopOnRoute);
-            buff_node["unique_stop_count"] = static_cast<int>(businfo.uniqStops);
+
+            buff_node.Key("curvature").Value(businfo.curvature);
+            buff_node.Key("route_length").Value( businfo.routeLength);
+            buff_node.Key("stop_count").Value(static_cast<int>(businfo.coutStopOnRoute));
+            buff_node.Key("unique_stop_count").Value(static_cast<int>(businfo.uniqStops));
         }
         else
         {
-            buff_node["error_message"] = std::string("not found");
+           buff_node.Key("error_message").Value("not found");
         }
     }
 
@@ -57,34 +57,33 @@ namespace transport_catalog::json_reader
     {
         try
         {
-            const auto &root_map = document_json_.GetRoot().AsMap();
+            const auto &root_map = document_json_.GetRoot().AsDict();
             if (root_map.count("stat_requests") > 0)
             {
-                json::Array res = {};
+                json::Builder BuildDoc = json::Builder();
+                BuildDoc.StartArray();
                 for (const auto &value : root_map.at("stat_requests").AsArray())
                 {
-                    json::Dict buff_node = json::Dict{
-                        {"request_id",
-                         value.AsMap().at("id").AsInt()},
-                    };
-
-                    if (value.AsMap().at("type").AsString() == "Stop")
+                    BuildDoc.StartDict().Key("request_id").Value(value.AsDict().at("id").AsInt());
+    
+                    if (value.AsDict().at("type").AsString() == "Stop")
                     {
-                        RenderStop(buff_node, value);
+                        RenderStop(BuildDoc, value);
                     }
 
-                    if (value.AsMap().at("type").AsString() == "Bus")
+                    if (value.AsDict().at("type").AsString() == "Bus")
                     {
-                        RenderBus(buff_node, value);
+                       RenderBus(BuildDoc, value);
                     }
 
-                    if (value.AsMap().at("type").AsString() == "Map")
+                    if (value.AsDict().at("type").AsString() == "Map")
                     {
-                        RenderMap(buff_node, value);
+                       RenderMap(BuildDoc);
                     }
-                    res.push_back(buff_node);
+                    BuildDoc.EndDict();
                 }
-                PrintNode(res, std::cout);
+                BuildDoc.EndArray();
+                json::Print(json::Document{BuildDoc.Build()},std::cout);
             }
         }
         catch (const std::exception &e)
@@ -95,19 +94,19 @@ namespace transport_catalog::json_reader
 
     inline void JsonReader::ParsingRequestBus()
     {
-        const auto &root_map = document_json_.GetRoot().AsMap();
+        const auto &root_map = document_json_.GetRoot().AsDict();
         if (root_map.count("base_requests") > 0)
         {
             for (const auto &value : root_map.at("base_requests").AsArray())
             {
-                if (value.AsMap().at("type").AsString() == "Bus")
+                if (value.AsDict().at("type").AsString() == "Bus")
                 {
                     domain::Bus buff_bus;
 
-                    buff_bus.name = value.AsMap().at("name").AsString();
-                    buff_bus.type = value.AsMap().at("is_roundtrip").AsBool() ? domain::BusType::Ring : domain::BusType::Line;
+                    buff_bus.name = value.AsDict().at("name").AsString();
+                    buff_bus.type = value.AsDict().at("is_roundtrip").AsBool() ? domain::BusType::Ring : domain::BusType::Line;
 
-                    for (const auto &v : value.AsMap().at("stops").AsArray())
+                    for (const auto &v : value.AsDict().at("stops").AsArray())
                     {
                         auto stop = transport_catalog_.FindStop(v.AsString());
                         if (*stop != Stop{})
@@ -144,22 +143,22 @@ namespace transport_catalog::json_reader
 
     inline void JsonReader::ParsingRequestStop()
     {
-        const auto &root_map = document_json_.GetRoot().AsMap();
+        const auto &root_map = document_json_.GetRoot().AsDict();
         if (root_map.count("base_requests") > 0)
         {
 
             std::unordered_map<std::string_view, const json::Dict *> buff_stops_dist;
             for (const auto &value : root_map.at("base_requests").AsArray())
             {
-                if (value.AsMap().at("type").AsString() == "Stop")
+                if (value.AsDict().at("type").AsString() == "Stop")
                 {
                     domain::Stop buff_stop;
 
-                    buff_stop.name = value.AsMap().at("name").AsString();
-                    buff_stop.coordinates.lat = value.AsMap().at("latitude").AsDouble();
-                    buff_stop.coordinates.lng = value.AsMap().at("longitude").AsDouble();
+                    buff_stop.name = value.AsDict().at("name").AsString();
+                    buff_stop.coordinates.lat = value.AsDict().at("latitude").AsDouble();
+                    buff_stop.coordinates.lng = value.AsDict().at("longitude").AsDouble();
                     transport_catalog_.AddStop(buff_stop);
-                    buff_stops_dist[value.AsMap().at("name").AsString()] = &value.AsMap().at("road_distances").AsMap();
+                    buff_stops_dist[value.AsDict().at("name").AsString()] = &value.AsDict().at("road_distances").AsDict();
                 }
             }
 
@@ -186,7 +185,7 @@ namespace transport_catalog::json_reader
         try
         {
             svgreader::RenderSettings redsetting;
-            const auto &root_map = document_json_.GetRoot().AsMap().at("render_settings").AsMap();
+            const auto &root_map = document_json_.GetRoot().AsDict().at("render_settings").AsDict();
 
             redsetting.width = root_map.at("width").AsDouble();
             redsetting.height = root_map.at("height").AsDouble();
