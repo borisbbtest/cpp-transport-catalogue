@@ -3,186 +3,170 @@
 #include <iostream>
 #include <map>
 #include <string>
-#include <vector>
 #include <variant>
+#include <vector>
 
 namespace json
 {
-	using namespace std::literals;
 
 	class Node;
-	// Сохраните объявления Dict и Array без изменения
 	using Dict = std::map<std::string, Node>;
 	using Array = std::vector<Node>;
 
-	// Эта ошибка должна выбрасываться при ошибках парсинга JSON
 	class ParsingError : public std::runtime_error
 	{
 	public:
 		using runtime_error::runtime_error;
 	};
 
-	class Node
+	class Node final
+		: private std::variant<std::nullptr_t, Array, Dict, bool, int, double, std::string>
 	{
 	public:
-		/* Реализуйте Node, используя std::variant */
-		using Value = std::variant<std::nullptr_t, int, bool, double, std::string, Array, Dict>;
+		using variant::variant;
+		using Value = variant;
 
-		Node() = default;
-		Node(std::nullptr_t value);
-		Node(int value);
-		Node(bool value);
-		Node(double value);
-		Node(std::string value);
-		Node(Array array);
-		Node(Dict map);
+		bool IsInt() const
+		{
+			return std::holds_alternative<int>(*this);
+		}
+		int AsInt() const
+		{
+			using namespace std::literals;
+			if (!IsInt())
+			{
+				throw std::logic_error("Not an int"s);
+			}
+			return std::get<int>(*this);
+		}
 
-		bool IsInt() const;
-		bool IsDouble() const;
-		bool IsPureDouble() const;
-		bool IsBool() const;
-		bool IsString() const;
-		bool IsNull() const;
-		bool IsArray() const;
-		bool IsMap() const;
+		bool IsPureDouble() const
+		{
+			return std::holds_alternative<double>(*this);
+		}
+		bool IsDouble() const
+		{
+			return IsInt() || IsPureDouble();
+		}
+		double AsDouble() const
+		{
+			using namespace std::literals;
+			if (!IsDouble())
+			{
+				throw std::logic_error("Not a double"s);
+			}
+			return IsPureDouble() ? std::get<double>(*this) : AsInt();
+		}
 
-		int AsInt() const;
-		bool AsBool() const;
-		double AsDouble() const;
-		const std::string &AsString() const;
-		const Array &AsArray() const;
-		const Dict &AsMap() const;
+		bool IsBool() const
+		{
+			return std::holds_alternative<bool>(*this);
+		}
+		bool AsBool() const
+		{
+			using namespace std::literals;
+			if (!IsBool())
+			{
+				throw std::logic_error("Not a bool"s);
+			}
+
+			return std::get<bool>(*this);
+		}
+
+		bool IsNull() const
+		{
+			return std::holds_alternative<std::nullptr_t>(*this);
+		}
+
+		bool IsArray() const
+		{
+			return std::holds_alternative<Array>(*this);
+		}
+		const Array &AsArray() const
+		{
+			using namespace std::literals;
+			if (!IsArray())
+			{
+				throw std::logic_error("Not an array"s);
+			}
+
+			return std::get<Array>(*this);
+		}
+
+		bool IsString() const
+		{
+			return std::holds_alternative<std::string>(*this);
+		}
+		const std::string &AsString() const
+		{
+			using namespace std::literals;
+			if (!IsString())
+			{
+				throw std::logic_error("Not a string"s);
+			}
+
+			return std::get<std::string>(*this);
+		}
+
+		bool IsDict() const
+		{
+			return std::holds_alternative<Dict>(*this);
+		}
+		const Dict &AsDict() const
+		{
+			using namespace std::literals;
+			if (!IsDict())
+			{
+				throw std::logic_error("Not a dict"s);
+			}
+
+			return std::get<Dict>(*this);
+		}
+
+		bool operator==(const Node &rhs) const
+		{
+			return GetValue() == rhs.GetValue();
+		}
 
 		const Value &GetValue() const
 		{
-			return value_;
+			return *this;
 		}
-
-	private:
-		Value value_;
 	};
 
-	inline bool operator==(Node left, Node right)
+	inline bool operator!=(const Node &lhs, const Node &rhs)
 	{
-		return left.GetValue() == right.GetValue();
-	}
-
-	inline bool operator!=(Node left, Node right)
-	{
-		return !(left == right);
+		return !(lhs == rhs);
 	}
 
 	class Document
 	{
 	public:
-		explicit Document(Node root);
+		explicit Document(Node root)
+			: root_(std::move(root))
+		{
+		}
 
-		const Node &GetRoot() const;
+		const Node &GetRoot() const
+		{
+			return root_;
+		}
 
 	private:
 		Node root_;
 	};
 
-	inline bool operator==(Document left, Document right)
+	inline bool operator==(const Document &lhs, const Document &rhs)
 	{
-		return left.GetRoot() == right.GetRoot();
+		return lhs.GetRoot() == rhs.GetRoot();
 	}
 
-	inline bool operator!=(Document left, Document right)
+	inline bool operator!=(const Document &lhs, const Document &rhs)
 	{
-		return !(left == right);
+		return !(lhs == rhs);
 	}
 
 	Document Load(std::istream &input);
-
-	/*===========================================*/
-
-	template <typename Value>
-	inline void PrintValue(const Value &value, std::ostream &out)
-	{
-		out << value;
-	}
-
-	inline void PrintValue(std::nullptr_t, std::ostream &out)
-	{
-		out << "null"sv;
-	}
-
-	inline void PrintValue(const bool &value, std::ostream &out)
-	{
-		out << std::boolalpha << value;
-	}
-
-	inline void PrintValue(const std::string &value, std::ostream &out)
-	{
-		// out << value;
-		out << "\""sv;
-		for (const char c : value)
-		{
-			if (c == '\r')
-			{
-				out << "\\r"sv;
-			}
-			else if (c == '\n')
-			{
-				out << "\\n"sv;
-			}
-			else if (c == '\\' || c == '\"')
-			{
-				out << "\\"sv;
-				out << c;
-			}
-			else
-			{
-				out << c;
-			}
-		}
-		out << "\""sv;
-	}
-
-	void PrintNode(const Node &, std::ostream &);
-	inline void PrintValue(const Array &array, std::ostream &out)
-	{
-		/*for (const auto& value : array) {
-			PrintNode(value, out);
-		}*/
-		out << "["sv;
-		for (size_t i = 0; i < array.size(); ++i)
-		{
-			if (i > 0)
-			{
-				out << ","sv;
-			}
-			PrintNode(array[i], out);
-		}
-		out << "]"sv;
-	}
-	inline void PrintValue(const Dict &dict, std::ostream &out)
-	{
-		out << "{"sv;
-		int i = 0;
-		for (const auto &[key, value] : dict)
-		{
-			if (i > 0)
-			{
-				out << ","s;
-			}
-			++i;
-			PrintNode(key, out);
-			out << ":"sv;
-			PrintNode(value, out);
-		}
-		out << "}"sv;
-	}
-	/*int, bool, double, std::string, Array, Dict*/
-	inline void PrintNode(const Node &node, std::ostream &out)
-	{
-		std::visit(
-			[&out](const auto &value)
-			{ PrintValue(value, out); },
-			node.GetValue());
-	}
-	/*===========================================*/
 
 	void Print(const Document &doc, std::ostream &output);
 
