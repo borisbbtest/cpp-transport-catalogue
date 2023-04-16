@@ -7,14 +7,9 @@ namespace json
 
     class BuildContext;
     class KeyContext;
-    class StartDictContext;
-    class StartArrayContext;
-    class ValueContext;
     class ValueBuildContext;
     class ValueAfterKeyContext;
     class ValueAfterStartArrayContext;
-    class EndDictContext;
-    class EndArrayContext;
 
     class Builder
     {
@@ -22,12 +17,12 @@ namespace json
         const std::vector<Node *> &GetNodesStack() const;
         KeyContext Key(const std::string &s);
         ValueBuildContext Value(Node::Value v);
-        ValueAfterKeyContext Value(Node::Value v, int i);
-        ValueAfterStartArrayContext Value(Node::Value v, bool i);
-        StartDictContext StartDict();
-        StartArrayContext StartArray();
-        EndDictContext EndDict();
-        EndArrayContext EndArray();
+        ValueAfterKeyContext ValueAfterKey(Node::Value v);
+        ValueAfterStartArrayContext ValueAfterStartArray(Node::Value v);
+        Builder StartDict();
+        Builder StartArray();
+        Builder EndDict();
+        Builder EndArray();
         Node Build();
         virtual ~Builder() {}
 
@@ -44,10 +39,6 @@ namespace json
         BuildContext(Builder &b);
         KeyContext Key(const std::string &s);
         BuildContext Value(Node::Value v);
-        StartDictContext StartDict();
-        StartArrayContext StartArray();
-        EndDictContext EndDict();
-        EndArrayContext EndArray();
         Node Build();
         Builder &GetB();
 
@@ -62,88 +53,33 @@ namespace json
 
         ValueAfterKeyContext Value(Node::Value v);
         KeyContext Key(const std::string &s) = delete;
-        EndDictContext EndDict() = delete;
-        EndArrayContext EndArray() = delete;
         Node Build() = delete;
     };
 
-    class StartDictContext : public BuildContext
+    class ValueBuildContext : public BuildContext
     {
     public:
-        StartDictContext(Builder &b) : BuildContext(b) {}
-
-        BuildContext Value(Node::Value v) = delete;
-        StartDictContext StartDict() = delete;
-        StartArrayContext StartArray() = delete;
-        EndArrayContext EndArray() = delete;
-        Node Build() = delete;
-    };
-
-    class StartArrayContext : public BuildContext
-    {
-    public:
-        StartArrayContext(Builder &b) : BuildContext(b) {}
-
-        ValueAfterStartArrayContext Value(Node::Value v);
-        KeyContext Key(const std::string &s) = delete;
-        EndDictContext EndDict() = delete;
-        Node Build() = delete;
-    };
-
-    class ValueContext : public BuildContext
-    {
-    public:
-        ValueContext(Builder &b) : BuildContext(b) {}
-    };
-
-    class ValueBuildContext : public ValueContext
-    {
-    public:
-        ValueBuildContext(Builder &b) : ValueContext(b) {}
-        // using BuildContext::Build;
-
+        ValueBuildContext(Builder &b) : BuildContext(b) {}
         KeyContext Key(const std::string &s) = delete;
         BuildContext Value(Node::Value v) = delete;
-        StartDictContext StartDict() = delete;
-        StartArrayContext StartArray() = delete;
-        EndDictContext EndDict() = delete;
-        Builder &EndArray() = delete;
     };
 
-    class ValueAfterKeyContext : public ValueContext
+    class ValueAfterKeyContext : public BuildContext
     {
     public:
-        ValueAfterKeyContext(Builder &b) : ValueContext(b) {}
-
+        ValueAfterKeyContext(Builder &b) : BuildContext(b) {}
         BuildContext Value(Node::Value v) = delete;
-        StartDictContext StartDict() = delete;
-        StartArrayContext StartArray() = delete;
-        EndArrayContext EndArray() = delete;
+        Builder EndArray() = delete;
         Node Build() = delete;
     };
 
-    class ValueAfterStartArrayContext : public ValueContext
+    class ValueAfterStartArrayContext : public BuildContext
     {
     public:
-        ValueAfterStartArrayContext(Builder &b) : ValueContext(b) {}
+        ValueAfterStartArrayContext(Builder &b) : BuildContext(b) {}
         ValueAfterStartArrayContext Value(Node::Value v);
         KeyContext Key(const std::string &s) = delete;
-        EndDictContext EndDict() = delete;
         Node Build() = delete;
-    };
-
-    class EndDictContext : public BuildContext
-    {
-    public:
-        EndDictContext(Builder &b) : BuildContext(b) {}
-        ValueAfterStartArrayContext Value(Node::Value v);
-    };
-
-    class EndArrayContext : public BuildContext
-    {
-    public:
-        EndArrayContext(Builder &b) : BuildContext(b) {}
-        ValueAfterStartArrayContext Value(Node::Value v);
     };
 
 }

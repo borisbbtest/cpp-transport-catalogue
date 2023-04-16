@@ -27,52 +27,8 @@ namespace json
         return {*this};
     }
 
-    ValueBuildContext Builder::Value(Node::Value v)
-    {
-        CheckComplete();
-        const_cast<Node::Value &>(root_.GetValue()) = std::move(v);
-        nodes_stack_.pop_back();
-        if (nodes_stack_.size() == 0)
-        {
-            complete = true;
-        }
-        return {*this};
-    }
-
-    ValueAfterKeyContext Builder::Value(Node::Value v, int i)
-    {
-        i = 0;
-        if (i != 0)
-        {
-        }
-        CheckComplete();
-        const_cast<Node::Value &>((*nodes_stack_.back()).GetValue()) = std::move(v);
-        nodes_stack_.pop_back();
-        if (nodes_stack_.size() == 0)
-        {
-            complete = true;
-        }
-        return {*this};
-    }
-
-    ValueAfterStartArrayContext Builder::Value(Node::Value v, bool i)
-    {
-        i = false;
-        if (i != false)
-        {
-        }
-        CheckComplete();
-        Node tmp;
-        const_cast<Node::Value &>(tmp.GetValue()) = std::move(v);
-        const_cast<Array &>(nodes_stack_.back()->AsArray()).emplace_back(std::move(tmp));
-        if (nodes_stack_.size() == 0)
-        {
-            complete = true;
-        }
-        return {*this};
-    }
-
-    StartDictContext Builder::StartDict()
+// --------
+    Builder Builder::StartDict()
     {
         CheckComplete();
         if (nodes_stack_.back() == nullptr)
@@ -96,7 +52,7 @@ namespace json
         return {*this};
     }
 
-    StartArrayContext Builder::StartArray()
+    Builder Builder::StartArray()
     {
         CheckComplete();
         if (nodes_stack_.back() == nullptr)
@@ -120,36 +76,6 @@ namespace json
         return {*this};
     }
 
-    EndDictContext Builder::EndDict()
-    {
-        CheckComplete();
-        if (!nodes_stack_.back()->IsDict())
-        {
-            throw std::logic_error("Bad map end");
-        }
-        nodes_stack_.pop_back();
-        if (nodes_stack_.size() == 0)
-        {
-            complete = true;
-        }
-        return {*this};
-    }
-
-    EndArrayContext Builder::EndArray()
-    {
-        CheckComplete();
-        if (!nodes_stack_.back()->IsArray())
-        {
-            throw std::logic_error("Bad array end");
-        }
-        nodes_stack_.pop_back();
-        if (nodes_stack_.size() == 0)
-        {
-            complete = true;
-        }
-        return {*this};
-    }
-
     Node Builder::Build()
     {
         if (complete == false)
@@ -168,27 +94,49 @@ namespace json
         return b_.Key(s);
     }
 
-    BuildContext BuildContext::Value(Node::Value v)
+      ValueBuildContext Builder::Value(Node::Value v)
     {
-        return Builder::Value(v, false);
+        CheckComplete();
+        const_cast<Node::Value &>(root_.GetValue()) = std::move(v);
+        nodes_stack_.pop_back();
+        if (nodes_stack_.size() == 0)
+        {
+            complete = true;
+        }
+        return {*this};
     }
 
-    StartDictContext BuildContext::StartDict()
+    ValueAfterKeyContext Builder::ValueAfterKey(Node::Value v)
     {
-        return b_.StartDict();
+        CheckComplete();
+        const_cast<Node::Value &>((*nodes_stack_.back()).GetValue()) = std::move(v);
+        nodes_stack_.pop_back();
+        if (nodes_stack_.size() == 0)
+        {
+            complete = true;
+        }
+        return {*this};
     }
-    StartArrayContext BuildContext::StartArray()
+
+    ValueAfterStartArrayContext Builder::ValueAfterStartArray(Node::Value v)
     {
-        return b_.StartArray();
+        CheckComplete();
+        Node tmp;
+        const_cast<Node::Value &>(tmp.GetValue()) = std::move(v);
+        const_cast<Array &>(nodes_stack_.back()->AsArray()).emplace_back(std::move(tmp));
+        if (nodes_stack_.size() == 0)
+        {
+            complete = true;
+        }
+        return {*this};
     }
-    EndDictContext BuildContext::EndDict()
+
+    BuildContext BuildContext::Value(Node::Value v)
     {
-        return b_.EndDict();
+        return Builder::ValueAfterStartArray(v);
     }
-    EndArrayContext BuildContext::EndArray()
-    {
-        return b_.EndArray();
-    }
+
+
     Node BuildContext::Build()
     {
         return b_.Build();
@@ -202,27 +150,39 @@ namespace json
 
     ValueAfterKeyContext KeyContext::Value(Node::Value v)
     {
-        return GetB().Value(v, 0);
+        return GetB().ValueAfterKey(v);
     }
 
-    ValueAfterStartArrayContext StartArrayContext::Value(Node::Value v)
+    /// \\ \\ 
+
+    Builder Builder::EndDict()
     {
-        return GetB().Value(v, false);
+        CheckComplete();
+        if (!nodes_stack_.back()->IsDict())
+        {
+            throw std::logic_error("Bad map end");
+        }
+        nodes_stack_.pop_back();
+        if (nodes_stack_.size() == 0)
+        {
+            complete = true;
+        }
+        return {*this};
     }
 
-    ValueAfterStartArrayContext ValueAfterStartArrayContext::Value(Node::Value v)
+    Builder Builder::EndArray()
     {
-        return GetB().Value(v, false);
-    }
-
-    ValueAfterStartArrayContext EndDictContext::Value(Node::Value v)
-    {
-        return GetB().Value(v, false);
-    }
-
-    ValueAfterStartArrayContext EndArrayContext::Value(Node::Value v)
-    {
-        return GetB().Value(v, false);
+        CheckComplete();
+        if (!nodes_stack_.back()->IsArray())
+        {
+            throw std::logic_error("Bad array end");
+        }
+        nodes_stack_.pop_back();
+        if (nodes_stack_.size() == 0)
+        {
+            complete = true;
+        }
+        return {*this};
     }
 
 }
