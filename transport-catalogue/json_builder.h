@@ -2,9 +2,9 @@
 
 #include "json.h"
 
+// Убрал лишние обертки. Наследование от билдера тяжело убрать проще переписать с нуля.
 namespace json
 {
-
     class BuildContext;
     class KeyContext;
     class StartDictContext;
