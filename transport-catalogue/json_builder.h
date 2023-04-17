@@ -7,7 +7,9 @@ namespace json
 
     class BuildContext;
     class KeyContext;
-    class ValueBuildContext;
+    class StartDictContext;
+    class StartArrayContext;
+    class ValueContext;
     class ValueAfterKeyContext;
     class ValueAfterStartArrayContext;
 
@@ -16,33 +18,30 @@ namespace json
     public:
         const std::vector<Node *> &GetNodesStack() const;
         KeyContext Key(const std::string &s);
-        ValueBuildContext Value(Node::Value v);
-        ValueAfterKeyContext ValueAfterKey(Node::Value v);
-        ValueAfterStartArrayContext ValueAfterStartArray(Node::Value v);
-        Builder StartDict();
-        Builder StartArray();
-        Builder EndDict();
-        Builder EndArray();
+        ValueContext Value(Node::Value v);
+        StartDictContext StartDict();
+        StartArrayContext StartArray();
+        Builder &EndDict();
+        Builder &EndArray();
         Node Build();
-        virtual ~Builder() {}
-
-    private:
-        Node root_;
+        virtual ~Builder(){};
         std::vector<Node *> nodes_stack_ = {nullptr};
         bool complete = false;
+    protected:
+        Node root_;
         void CheckComplete();
     };
 
     class BuildContext : public Builder
     {
     public:
-        BuildContext(Builder &b);
+        BuildContext(Builder &b) : b_(b){};
         KeyContext Key(const std::string &s);
         BuildContext Value(Node::Value v);
         Node Build();
         Builder &GetB();
 
-    private:
+    protected:
         Builder &b_;
     };
 
@@ -50,16 +49,34 @@ namespace json
     {
     public:
         KeyContext(Builder &b) : BuildContext(b) {}
-
         ValueAfterKeyContext Value(Node::Value v);
         KeyContext Key(const std::string &s) = delete;
         Node Build() = delete;
     };
 
-    class ValueBuildContext : public BuildContext
+    class StartDictContext : public BuildContext
     {
     public:
-        ValueBuildContext(Builder &b) : BuildContext(b) {}
+        StartDictContext(Builder &b) : BuildContext(b) {}
+        BuildContext Value(Node::Value v) = delete;
+        StartDictContext StartDict() = delete;
+        StartArrayContext StartArray() = delete;
+        Node Build() = delete;
+    };
+
+    class StartArrayContext : public BuildContext
+    {
+    public:
+        StartArrayContext(Builder &b) : BuildContext(b) {}
+        ValueAfterStartArrayContext Value(Node::Value v);
+        KeyContext Key(const std::string &s) = delete;
+        Node Build() = delete;
+    };
+
+    class ValueContext : public BuildContext
+    {
+    public:
+        ValueContext(Builder &b) : BuildContext(b) {}
         KeyContext Key(const std::string &s) = delete;
         BuildContext Value(Node::Value v) = delete;
     };
@@ -77,7 +94,7 @@ namespace json
     {
     public:
         ValueAfterStartArrayContext(Builder &b) : BuildContext(b) {}
-        ValueAfterStartArrayContext Value(Node::Value v);
+        BuildContext Value(Node::Value v);
         KeyContext Key(const std::string &s) = delete;
         Node Build() = delete;
     };
