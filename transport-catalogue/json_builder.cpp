@@ -27,8 +27,8 @@ namespace json
         return {*this};
     }
 
-// --------
-    Builder Builder::StartDict()
+    // --------
+    StartDictContext Builder::StartDict()
     {
         CheckComplete();
         if (nodes_stack_.back() == nullptr)
@@ -52,7 +52,7 @@ namespace json
         return {*this};
     }
 
-    Builder Builder::StartArray()
+    StartArrayContext Builder::StartArray()
     {
         CheckComplete();
         if (nodes_stack_.back() == nullptr)
@@ -87,38 +87,8 @@ namespace json
 
     ////////////////    BuildContext    //////////////////
 
-    BuildContext::BuildContext(Builder &b) : b_(b) {}
 
-    KeyContext BuildContext::Key(const std::string &s)
-    {
-        return b_.Key(s);
-    }
-
-      ValueBuildContext Builder::Value(Node::Value v)
-    {
-        CheckComplete();
-        const_cast<Node::Value &>(root_.GetValue()) = std::move(v);
-        nodes_stack_.pop_back();
-        if (nodes_stack_.size() == 0)
-        {
-            complete = true;
-        }
-        return {*this};
-    }
-
-    ValueAfterKeyContext Builder::ValueAfterKey(Node::Value v)
-    {
-        CheckComplete();
-        const_cast<Node::Value &>((*nodes_stack_.back()).GetValue()) = std::move(v);
-        nodes_stack_.pop_back();
-        if (nodes_stack_.size() == 0)
-        {
-            complete = true;
-        }
-        return {*this};
-    }
-
-    ValueAfterStartArrayContext Builder::ValueAfterStartArray(Node::Value v)
+    BuildContext BuildContext::Value(Node::Value v)
     {
         CheckComplete();
         Node tmp;
@@ -131,11 +101,24 @@ namespace json
         return {*this};
     }
 
-    BuildContext BuildContext::Value(Node::Value v)
+    ValueAfterKeyContext KeyContext::Value(Node::Value v)
     {
-        return Builder::ValueAfterStartArray(v);
+       // return GetB().ValueAfterKey(v);
+        auto* tmp = &GetB() ;
+        CheckComplete();
+        const_cast<Node::Value &>((*tmp->nodes_stack_.back()).GetValue()) = std::move(v);
+        tmp->nodes_stack_.pop_back();
+        if (tmp->nodes_stack_.size() == 0)
+        {
+            tmp->complete = true;
+        }
+        return {*tmp};
     }
 
+    KeyContext BuildContext::Key(const std::string &s)
+    {
+        return b_.Key(s);
+    }
 
     Node BuildContext::Build()
     {
@@ -148,14 +131,9 @@ namespace json
 
     //////////////////    Other contexts    ///////////////////////
 
-    ValueAfterKeyContext KeyContext::Value(Node::Value v)
-    {
-        return GetB().ValueAfterKey(v);
-    }
-
     /// \\ \\ 
 
-    Builder Builder::EndDict()
+    Builder &Builder::EndDict()
     {
         CheckComplete();
         if (!nodes_stack_.back()->IsDict())
@@ -170,7 +148,7 @@ namespace json
         return {*this};
     }
 
-    Builder Builder::EndArray()
+    Builder &Builder::EndArray()
     {
         CheckComplete();
         if (!nodes_stack_.back()->IsArray())
