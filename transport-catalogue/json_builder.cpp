@@ -16,17 +16,6 @@ namespace json
         return nodes_stack_;
     }
 
-    KeyContext Builder::Key(const std::string &s)
-    {
-        CheckComplete();
-        if (nodes_stack_.back() == nullptr || !nodes_stack_.back()->IsDict())
-        {
-            throw std::logic_error("Key must be within a map and go first");
-        }
-        nodes_stack_.emplace_back(&(const_cast<Dict &>(nodes_stack_.back()->AsDict())[std::move(s)]));
-        return {*this};
-    }
-
     // --------
     StartDictContext Builder::StartDict()
     {
@@ -49,7 +38,7 @@ namespace json
         {
             *nodes_stack_.back() = Node{Dict{}};
         }
-        return {*this};
+        return StartDictContext(*this);
     }
 
     StartArrayContext Builder::StartArray()
@@ -85,53 +74,68 @@ namespace json
         return root_;
     }
 
-    ////////////////    BuildContext    //////////////////
-
-
-    BuildContext BuildContext::Value(Node::Value v)
+    KeyContext Builder::Key(const std::string &s)
     {
         CheckComplete();
-        Node tmp;
-        const_cast<Node::Value &>(tmp.GetValue()) = std::move(v);
-        const_cast<Array &>(nodes_stack_.back()->AsArray()).emplace_back(std::move(tmp));
-        if (nodes_stack_.size() == 0)
+        if (nodes_stack_.back() == nullptr || !nodes_stack_.back()->IsDict())
         {
-            complete = true;
+            throw std::logic_error("Key must be within a map and go first");
         }
+        nodes_stack_.emplace_back(&(const_cast<Dict &>(nodes_stack_.back()->AsDict())[std::move(s)]));
         return {*this};
     }
 
-    ValueAfterKeyContext KeyContext::Value(Node::Value v)
-    {
-       // return GetB().ValueAfterKey(v);
-        auto* tmp = &GetB() ;
-        CheckComplete();
-        const_cast<Node::Value &>((*tmp->nodes_stack_.back()).GetValue()) = std::move(v);
-        tmp->nodes_stack_.pop_back();
-        if (tmp->nodes_stack_.size() == 0)
-        {
-            tmp->complete = true;
-        }
-        return {*tmp};
-    }
-
-    KeyContext BuildContext::Key(const std::string &s)
+    KeyContext StartDictContext::Key(const std::string &s)
     {
         return b_.Key(s);
     }
 
-    Node BuildContext::Build()
+    StartDictContext KeyContext::Value(Node::Value v)
     {
-        return b_.Build();
-    }
-    Builder &BuildContext::GetB()
-    {
-        return b_;
+        return b_.Value(v, 3);
     }
 
-    //////////////////    Other contexts    ///////////////////////
+    StartArrayContext StartArrayContext::Value(Node::Value v)
+    {
+        return b_.Value(v, 2);
+    }
 
-    /// \\ \\ 
+    Builder &Builder::Value(Node::Value v, int is_)
+    {
+        CheckComplete();
+        if (is_ == 1)
+        {
+            const_cast<Node::Value &>(root_.GetValue()) = std::move(v);
+            nodes_stack_.pop_back();
+            if (nodes_stack_.size() == 0)
+            {
+                complete = true;
+            }
+        }
+        else if (is_ == 2)
+        {
+            CheckComplete();
+            Node tmp;
+            const_cast<Node::Value &>(tmp.GetValue()) = std::move(v);
+            const_cast<Array &>(nodes_stack_.back()->AsArray()).emplace_back(std::move(tmp));
+            if (nodes_stack_.size() == 0)
+            {
+                complete = true;
+            }
+        }
+        else if (is_ == 3)
+        {
+            CheckComplete();
+            const_cast<Node::Value &>((*nodes_stack_.back()).GetValue()) = std::move(v);
+            nodes_stack_.pop_back();
+            if (nodes_stack_.size() == 0)
+            {
+                complete = true;
+            }
+            return {*this};
+        }
+        return {*this};
+    }
 
     Builder &Builder::EndDict()
     {
@@ -148,6 +152,11 @@ namespace json
         return {*this};
     }
 
+    Builder &StartDictContext::EndDict()
+    {
+        return b_.EndDict();
+    }
+
     Builder &Builder::EndArray()
     {
         CheckComplete();
@@ -161,6 +170,11 @@ namespace json
             complete = true;
         }
         return {*this};
+    }
+
+    Builder &StartArrayContext::EndArray()
+    {
+        return b_.EndArray();
     }
 
 }
